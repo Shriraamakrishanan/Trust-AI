@@ -1,0 +1,107 @@
+<!-- Build and Developed by: Shri Raama Krishanan J-->
+<!-- Gmail Id: srkavp2006@gmail.com-->
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234285F4'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' /%3e%3c/svg%3e" type="image/svg+xml">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="An AI-powered tool that analyzes text to detect potential misinformation and educates users on identifying credible, trustworthy content using Gemini." />
+    <meta name="theme-color" content="#1f2937">
+    <title>Trust AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        /* Light Theme Colors - Google Inspired */
+        --background: #f8f9fa; /* Google's light grey background */
+        --surface: #ffffff; /* Card backgrounds */
+        --surface-muted: #f1f3f4; /* Subtle backgrounds like inputs */
+        --primary: #1a73e8; /* Google Blue */
+        --primary-hover: #1867cf;
+        --primary-foreground: #ffffff;
+        --primary-soft: #e8f0fe; /* Light blue for highlights */
+        --primary-soft-foreground: #1967d2;
+        --border: #dadce0; /* Standard border color */
+        --ring: #1a73e8;
+        --text-primary: #202124; /* Primary text color */
+        --text-secondary: #5f6368; /* Secondary text */
+        --text-tertiary: #80868b; /* Tertiary/placeholder text */
+        --danger: #d93025; /* Google Red */
+        --danger-soft: #fce8e6;
+        --success: #1e8e3e; /* Google Green */
+        --success-soft: #e6f4ea;
+        --warning: #f9ab00; /* Google Yellow/Amber */
+        --warning-soft: #fff7e0;
+      }
+
+      html.dark {
+        /* Dark Theme Colors - Google Inspired */
+        --background: #202124; /* Google's dark background */
+        --surface: #292a2d; /* Card backgrounds */
+        --surface-muted: #3c4043; /* Inputs, muted surfaces */
+        --primary: #8ab4f8; /* Accessible Google Blue for dark mode */
+        --primary-hover: #9ac0fa;
+        --primary-foreground: #202124;
+        --primary-soft: #28354a; 
+        --primary-soft-foreground: #8ab4f8;
+        --border: #5f6368; /* Standard border color */
+        --ring: #8ab4f8;
+        --text-primary: #e8eaed; /* Primary text */
+        --text-secondary: #9aa0a6; /* Secondary text */
+        --text-tertiary: #80868b; /* Tertiary/placeholder text */
+        --danger: #f28b82; /* Lighter red for dark mode */
+        --danger-soft: #382928;
+        --success: #81c995; /* Lighter green */
+        --success-soft: #293a2f;
+        --warning: #fdd663; /* Lighter yellow */
+        --warning-soft: #423820;
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--background);
+        color: var(--text-primary);
+        transition: background-color 0.3s, color 0.3s;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      
+      /* Custom focus ring style */
+      *:focus-visible {
+        outline: 2px solid var(--ring) !important;
+        outline-offset: 2px !important;
+        border-radius: 4px;
+      }
+      
+      /* Custom fade-in animation */
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.19.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1"
+  }
+}
+</script>
+<!-- Libraries for file parsing, deferred to prevent render-blocking -->
+<script src="https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.min.js" defer></script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js" defer></script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
