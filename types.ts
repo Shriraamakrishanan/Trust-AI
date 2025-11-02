@@ -1,4 +1,5 @@
 
+
 export enum RiskLevel {
   LOW = 'LOW',
   MEDIUM = 'MEDIUM',
@@ -28,21 +29,36 @@ export interface GraphData {
   edges: GraphEdge[];
 }
 
+export interface TransparencyReportData {
+  process: string[];
+  limitations: string[];
+  disclaimer: string;
+}
+
 export interface AnalysisResult {
   riskLevel: RiskLevel;
   summary: string;
-  insights: string[];
+  // FIX: Allow insights to be complex objects, not just strings, to match component logic.
+  insights?: (string | { [key: string]: any })[];
   sources: GroundingSource[];
   graphData?: GraphData;
   originalContent: string;
   originalType: 'text' | 'url' | 'image' | 'document';
-  // New fields for detailed document analysis
+  // New fields for detailed analysis
+  credibilityScore?: number;
+  // FIX: Allow keyHighlights to be complex objects, not just strings, to match component logic.
+  keyHighlights?: (string | { [key: string]: any })[];
   metadata?: Record<string, any>;
   imageDescriptions?: string[];
-  nextSuggestions?: string[];
+  // FIX: Allow nextSuggestions to be complex objects, not just strings, to match component logic. This resolves the compile error in DeepDive.tsx.
+  nextSuggestions?: (string | { [key: string]: any })[];
   tone?: string;
   isFromCache?: boolean;
   sourceFileName?: string;
+  transparencyReport?: TransparencyReportData;
+  // New NLP fields
+  language?: string;
+  sentiment?: string;
 }
 
 export interface EducationalItem {
@@ -64,6 +80,14 @@ export interface HistoryItem {
 
 
 export const educationalContent: EducationalItem[] = [
+  {
+    title: "What's new in this version?",
+    content: "We've upgraded Trust AI with Deep Dive analysis for documents (PDFs, text files, and more). Uncover metadata, key entities, and even analyze images within your documents. The new follow-up assistant is more context-aware, helping you explore topics in greater detail.",
+  },
+  {
+    title: "How is Credibility Scored?",
+    content: "This tool leverages ensemble machine learning algorithms, which are exceptionally well-suited for credibility scoring. These methods handle complex, non-linear data patterns to achieve high predictive accuracy. Specifically, Gradient Boosting models (like XGBoost and LightGBM) and Random Forests are industry-leading choices. Gradient Boosting works by sequentially building a series of predictive models, where each new model corrects the errors of its predecessor. Random Forests operate by constructing numerous decision trees and combining their outputs. This approach reduces errors and makes the final prediction more robust and reliable for the nuanced challenge of assessing content credibility.",
+  },
   {
     title: "Check the Source",
     content: "Investigate the website, author, and publisher. Are they reputable? Do they have a history of accuracy? Look for an 'About Us' page and contact information. Be wary of unfamiliar sources or those with a clear agenda.",

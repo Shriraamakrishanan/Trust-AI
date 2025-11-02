@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { AnalysisResult } from '../types';
 import EntityGraph from './EntityGraph';
@@ -8,21 +9,69 @@ import TagIcon from './icons/TagIcon';
 import CubeTransparentIcon from './icons/CubeTransparentIcon';
 import PhotoIcon from './icons/PhotoIcon';
 import SparklesIcon from './icons/SparklesIcon';
+import CheckCircleIcon from './icons/CheckCircleIcon';
+import TranslationButton from './TranslationButton';
 
 interface AnalysisTabsProps {
   result: AnalysisResult;
 }
 
-type TabName = 'summary' | 'metadata' | 'insights' | 'entities' | 'images';
+type TabName = 'summary' | 'insights' | 'metadata' | 'entities' | 'images';
+
+const renderInsight = (insight: any, index: number) => {
+    let content: React.ReactNode;
+
+    if (typeof insight === 'string') {
+        content = <span className="text-[--text-secondary]">{insight}</span>;
+    } else if (insight && typeof insight === 'object') {
+        const suggestion = insight.suggestion || insight.title;
+        const detail = insight.detail || insight.description;
+        if (suggestion && detail) {
+            content = (
+                <div className="text-[--text-secondary]">
+                    <strong className="text-[--text-primary]">{suggestion}</strong>
+                    <p className="mt-1">{detail}</p>
+                </div>
+            );
+        } else if (suggestion) {
+            content = <span className="text-[--text-secondary]">{suggestion}</span>;
+        } else {
+            content = <span className="text-xs font-mono bg-[--surface-muted] p-1 rounded"> Fallback: {JSON.stringify(insight)}</span>
+        }
+    } else {
+        content = <span className="text-xs font-mono bg-[--surface-muted] p-1 rounded"> Unsupported: {String(insight)}</span>
+    }
+
+    return (
+        <li key={index} className="flex items-start space-x-3">
+            <SparklesIcon className="w-5 h-5 text-[--primary] flex-shrink-0 mt-1" />
+            {content}
+        </li>
+    );
+};
+
+// FIX: The 'keyHighlights' property can contain complex objects, which cannot be rendered directly. This adds a helper function to format the highlight content into a string before rendering, resolving the React error.
+const formatHighlight = (highlight: any): string => {
+    if (typeof highlight === 'string') {
+        return highlight;
+    }
+    if (highlight && typeof highlight === 'object') {
+        const suggestion = highlight.suggestion || highlight.title;
+        const detail = highlight.detail || highlight.description;
+        if (suggestion && detail) return `${suggestion}: ${detail}`;
+        if (suggestion) return suggestion;
+    }
+    return JSON.stringify(highlight);
+}
 
 const AnalysisTabs: React.FC<AnalysisTabsProps> = ({ result }) => {
   const [activeTab, setActiveTab] = useState<TabName>('summary');
 
   const tabs: { id: TabName; label: string; icon: React.ReactNode; condition: boolean }[] = [
-    { id: 'summary', label: 'Summary', icon: <ClipboardDocumentListIcon className="w-5 h-5" />, condition: !!result.summary },
-    { id: 'metadata', label: 'Metadata', icon: <TagIcon className="w-5 h-5" />, condition: !!result.metadata && Object.keys(result.metadata).length > 0 },
+    { id: 'summary', label: 'Summary', icon: <ClipboardDocumentListIcon className="w-5 h-5" />, condition: !!result.summary || (!!result.keyHighlights && result.keyHighlights.length > 0) },
     { id: 'insights', label: 'Insights', icon: <SparklesIcon className="w-5 h-5" />, condition: !!result.insights && result.insights.length > 0 },
-    { id: 'entities', label: 'Entities', icon: <CubeTransparentIcon className="w-5 h-5" />, condition: !!result.graphData && result.graphData.nodes.length > 0 },
+    { id: 'metadata', label: 'Metadata', icon: <TagIcon className="w-5 h-5" />, condition: !!result.metadata && Object.keys(result.metadata).length > 0 },
+    { id: 'entities', label: 'Entities', icon: <CubeTransparentIcon className="w-5 h-5" />, condition: !!(result.graphData?.nodes?.length) },
     { id: 'images', label: 'Images', icon: <PhotoIcon className="w-5 h-5" />, condition: !!result.imageDescriptions && result.imageDescriptions.length > 0 },
   ];
 
@@ -58,18 +107,18 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({ result }) => {
   const renderContent = () => {
     switch (activeTab) {
       case 'summary':
-        return <p className="text-[--text-secondary] whitespace-pre-wrap leading-relaxed">{result.summary}</p>;
+        return (
+          <TranslationButton 
+            summary={result.summary} 
+            highlights={result.keyHighlights} 
+          />
+        );
       case 'metadata':
         return result.metadata && <MetadataCard metadata={result.metadata} tone={result.tone} />;
       case 'insights':
         return (
           <ul className="space-y-3">
-            {result.insights.map((detail, index) => 
-                <li key={index} className="flex items-start space-x-3">
-                    <SparklesIcon className="w-5 h-5 text-[--primary] flex-shrink-0 mt-1" />
-                    <span className="text-[--text-secondary]">{detail}</span>
-                </li>
-            )}
+            {result.insights?.map(renderInsight)}
           </ul>
         );
       case 'entities':
@@ -98,16 +147,24 @@ const AnalysisTabs: React.FC<AnalysisTabsProps> = ({ result }) => {
                   <h3 className="text-lg font-semibold text-[--text-primary] mb-2">Summary</h3>
                   <p className="text-[--text-secondary] leading-relaxed">{result.summary}</p>
               </div>
+              {result.keyHighlights && result.keyHighlights.length > 0 && (
+                <div>
+                  <h4 className="text-lg font-semibold text-[--text-primary] mt-4 mb-2">Key Highlights</h4>
+                  <ul className="space-y-3">
+                    {result.keyHighlights.map((highlight, index) => (
+                      <li key={index} className="flex items-start space-x-3">
+                        <CheckCircleIcon className="w-5 h-5 text-[--success] flex-shrink-0 mt-1" />
+                        <span className="text-[--text-secondary]">{formatHighlight(highlight)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {result.insights?.length > 0 && (
                   <div>
-                      <h3 className="text-lg font-semibold text-[--text-primary] mb-2">Detailed Analysis</h3>
+                      <h3 className="text-lg font-semibold text-[--text-primary] mt-4 mb-2">Detailed Analysis</h3>
                       <ul className="space-y-3">
-                        {result.insights.map((detail, index) => 
-                            <li key={index} className="flex items-start space-x-3">
-                                <SparklesIcon className="w-5 h-5 text-[--primary] flex-shrink-0 mt-1" />
-                                <span className="text-[--text-secondary]">{detail}</span>
-                            </li>
-                        )}
+                        {result.insights?.map(renderInsight)}
                       </ul>
                   </div>
               )}

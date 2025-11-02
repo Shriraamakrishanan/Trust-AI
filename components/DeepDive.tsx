@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { AnalysisResult, RiskLevel } from '../types';
 import CheckCircleIcon from './icons/CheckCircleIcon';
@@ -6,6 +7,8 @@ import ExclamationTriangleIcon from './icons/ExclamationTriangleIcon';
 import InformationCircleIcon from './icons/InformationCircleIcon';
 import SparklesIcon from './icons/SparklesIcon';
 import AnalysisTabs from './AnalysisTabs';
+import CredibilityScore from './CredibilityScore';
+import ContentMetrics from './ContentMetrics';
 
 interface DeepDiveProps {
   result: AnalysisResult;
@@ -18,37 +21,34 @@ const RiskIndicator: React.FC<{ level: RiskLevel }> = ({ level }) => {
       icon: <ExclamationTriangleIcon className="w-7 h-7 text-[--danger]" />,
       textColor: "text-[--danger]",
       bg: "bg-[--danger-soft]",
-      border: "border-[--danger]",
     },
     [RiskLevel.MEDIUM]: {
       text: "Medium Risk / Caution Advised",
       icon: <ExclamationTriangleIcon className="w-7 h-7 text-[--warning]" />,
       textColor: "text-[--warning]",
       bg: "bg-[--warning-soft]",
-      border: "border-[--warning]",
     },
     [RiskLevel.LOW]: {
       text: "Low Risk of Misinformation",
       icon: <CheckCircleIcon className="w-7 h-7 text-[--success]" />,
       textColor: "text-[--success]",
       bg: "bg-[--success-soft]",
-      border: "border-[--success]",
     },
     [RiskLevel.UNKNOWN]: {
       text: "Analysis Result",
       icon: <InformationCircleIcon className="w-7 h-7 text-[--primary-soft-foreground]" />,
       textColor: "text-[--primary-soft-foreground]",
       bg: "bg-[--primary-soft]",
-      border: "border-[--primary-soft-foreground]",
     }
   };
 
   const current = config[level] || config[RiskLevel.UNKNOWN];
 
   return (
-    <div className={`p-4 rounded-lg flex items-center space-x-4 border ${current.bg} ${current.border}`}>
+    <div className={`p-4 rounded-lg flex flex-col items-center justify-center text-center space-y-2 h-full ${current.bg} border border-[--border]`}>
       <div className="flex-shrink-0">{current.icon}</div>
       <h2 className={`text-xl font-bold ${current.textColor}`}>{current.text}</h2>
+      <p className="text-sm text-[--text-secondary]">Based on available information and our analysis.</p>
     </div>
   );
 };
@@ -63,10 +63,27 @@ const CachedResultIndicator: React.FC = () => (
 );
 
 const DeepDive: React.FC<DeepDiveProps> = ({ result }) => {
+    const hasMetrics = result.credibilityScore !== undefined || result.riskLevel;
+    const hasNlpMetrics = result.language || result.sentiment;
+
     return (
         <div className="space-y-8 animate-fade-in">
             {result.isFromCache && <CachedResultIndicator />}
-            <RiskIndicator level={result.riskLevel} />
+            
+            {hasMetrics && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {result.credibilityScore !== undefined && (
+                        <CredibilityScore score={result.credibilityScore} />
+                    )}
+                    <div className={result.credibilityScore === undefined ? 'md:col-span-2' : ''}>
+                        <RiskIndicator level={result.riskLevel} />
+                    </div>
+                </div>
+            )}
+
+            {hasNlpMetrics && (
+                <ContentMetrics language={result.language} sentiment={result.sentiment} />
+            )}
 
             <AnalysisTabs result={result} />
 
@@ -74,17 +91,23 @@ const DeepDive: React.FC<DeepDiveProps> = ({ result }) => {
                 <div>
                     <h3 className="text-lg font-semibold text-[--text-primary] mb-3">Suggested Next Steps</h3>
                     <div className="grid sm:grid-cols-2 gap-3">
-                        {result.nextSuggestions.slice(0, 2).map((suggestion, index) => (
-                        <div key={index} className="p-4 bg-[--surface-muted] rounded-lg text-sm text-[--text-secondary] flex items-start space-x-3 border border-[--border]">
-                            <SparklesIcon className="w-5 h-5 mt-0.5 flex-shrink-0 text-[--primary]" />
-                            <span>{suggestion}</span>
-                        </div>
-                        ))}
+                        {result.nextSuggestions.slice(0, 2).map((suggestion, index) => {
+                            const suggestionContent = typeof suggestion === 'string'
+                                ? suggestion
+                                : (suggestion && typeof suggestion === 'object' && 'suggestion' in suggestion ? String(suggestion.suggestion) : JSON.stringify(suggestion));
+
+                            return (
+                                <div key={index} className="p-4 bg-[--surface-muted] rounded-lg text-sm text-[--text-secondary] flex items-start space-x-3 border border-[--border]">
+                                    <SparklesIcon className="w-5 h-5 mt-0.5 flex-shrink-0 text-[--primary]" />
+                                    <span>{suggestionContent}</span>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             )}
 
-            {result.sources.length > 0 && (
+            {result.sources?.length > 0 && (
                 <div>
                     <h3 className="text-lg font-semibold text-[--text-primary] mb-3">Web Sources Used for Analysis</h3>
                     <ul className="space-y-2">

@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AnalysisResult } from '../types';
 import LinkIcon from './icons/LinkIcon';
 import DocumentTextIcon from './icons/DocumentTextIcon';
@@ -7,6 +6,7 @@ import PhotoIcon from './icons/PhotoIcon';
 import DocumentArrowUpIcon from './icons/DocumentArrowUpIcon';
 import XMarkIcon from './icons/XMarkIcon';
 import DeepDive from './DeepDive'; 
+import MicrophoneIcon from './icons/MicrophoneIcon';
 
 interface AnalysisCardProps {
   onAnalyze: (content: string, type: 'text' | 'url' | 'image' | 'document', files?: File | File[]) => void;
@@ -31,7 +31,74 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ onAnalyze, isLoading, resul
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [docFiles, setDocFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState<'image' | 'document' | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const isSpeechRecognitionSupported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+
   const MAX_DOCS = 10;
+
+  useEffect(() => {
+    if (!isSpeechRecognitionSupported) {
+      console.warn("Speech recognition not supported by this browser.");
+      return;
+    }
+
+    // FIX: Cast window to `any` to access non-standard SpeechRecognition APIs
+    // without TypeScript errors.
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[event.results.length - 1][0].transcript;
+      if (analysisType === 'text') {
+        setText(prevText => (prevText ? prevText.trim() + ' ' : '') + transcript);
+      } else if (analysisType === 'image') {
+        setImagePrompt(prevPrompt => (prevPrompt ? prevPrompt.trim() + ' ' : '') + transcript);
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [isSpeechRecognitionSupported, analysisType]);
+
+  const handleListen = () => {
+      if (isLoading || !recognitionRef.current) {
+          return;
+      }
+      
+      if (isListening) {
+          recognitionRef.current.stop();
+      } else {
+          try {
+              recognitionRef.current.start();
+          } catch(e) {
+              console.error("Error starting speech recognition:", e);
+              setIsListening(false);
+          }
+      }
+  };
 
   const handleTabSwitch = (type: 'text' | 'url' | 'image' | 'document') => {
     if (analysisType !== type) {
@@ -98,8 +165,8 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ onAnalyze, isLoading, resul
   const handleRemoveDocFile = (indexToRemove: number) => {
     setDocFiles(prevFiles => prevFiles.filter((_, index) => index !== indexToRemove));
   };
-
-  const isButtonDisabled = isLoading || 
+  
+  const isButtonDisabled = isLoading || isListening ||
     (analysisType === 'text' && !text.trim()) || 
     (analysisType === 'url' && !url.trim()) ||
     (analysisType === 'image' && (!imageFile || !imagePrompt.trim())) ||
@@ -138,14 +205,31 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ onAnalyze, isLoading, resul
       <div className="p-6 md:p-8">
         <form onSubmit={handleSubmit}>
           {analysisType === 'text' && (
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Paste a news headline, social media post, or any text snippet here..."
-              className="w-full h-40 p-4 bg-[--surface-muted] border border-[--border] rounded-md focus:ring-2 focus:ring-[--ring] focus:outline-none transition duration-200 resize-none placeholder:text-[--text-tertiary]"
-              disabled={isLoading}
-              aria-label="Text to analyze"
-            />
+            <div className="relative w-full">
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Paste text, or use the mic to dictate..."
+                className="w-full h-40 p-4 pr-12 bg-[--surface-muted] border border-[--border] rounded-md focus:ring-2 focus:ring-[--ring] focus:outline-none transition duration-200 resize-none placeholder:text-[--text-tertiary]"
+                disabled={isLoading}
+                aria-label="Text to analyze"
+              />
+              {isSpeechRecognitionSupported && (
+                  <button
+                      type="button"
+                      onClick={handleListen}
+                      disabled={isLoading}
+                      className={`absolute right-3 bottom-3 p-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] ${
+                          isListening
+                          ? 'bg-[--danger-soft] text-[--danger] scale-110'
+                          : 'bg-transparent text-[--text-secondary] hover:bg-[--surface-muted]'
+                      }`}
+                      aria-label={isListening ? 'Stop dictation' : 'Start dictation'}
+                  >
+                      <MicrophoneIcon className="w-5 h-5" />
+                  </button>
+              )}
+            </div>
           )}
           {analysisType === 'url' && (
             <input
@@ -179,15 +263,32 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ onAnalyze, isLoading, resul
                 )}
                 <input id="image-upload" type="file" className="sr-only" accept="image/*" onChange={(e) => handleFileChange(e.target.files, 'image')} disabled={isLoading} />
               </label>
-              <input
-                type="text"
-                value={imagePrompt}
-                onChange={(e) => setImagePrompt(e.target.value)}
-                placeholder="What do you want to know about this image?"
-                className="w-full p-4 bg-[--surface-muted] border border-[--border] rounded-md focus:ring-2 focus:ring-[--ring] focus:outline-none transition duration-200 placeholder:text-[--text-tertiary]"
-                disabled={isLoading || !imageFile}
-                aria-label="Question about the image"
-              />
+              <div className="relative w-full">
+                <input
+                    type="text"
+                    value={imagePrompt}
+                    onChange={(e) => setImagePrompt(e.target.value)}
+                    placeholder="Ask a question, or use the mic..."
+                    className="w-full p-4 pr-12 bg-[--surface-muted] border border-[--border] rounded-md focus:ring-2 focus:ring-[--ring] focus:outline-none transition duration-200 placeholder:text-[--text-tertiary]"
+                    disabled={isLoading || !imageFile}
+                    aria-label="Question about the image"
+                />
+                {isSpeechRecognitionSupported && (
+                    <button
+                        type="button"
+                        onClick={handleListen}
+                        disabled={isLoading || !imageFile}
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] disabled:opacity-50 disabled:cursor-not-allowed ${
+                            isListening
+                            ? 'bg-[--danger-soft] text-[--danger] scale-110'
+                            : 'bg-transparent text-[--text-secondary] hover:bg-[--surface-muted]'
+                        }`}
+                        aria-label={isListening ? 'Stop dictation' : 'Start dictation'}
+                    >
+                        <MicrophoneIcon className="w-5 h-5" />
+                    </button>
+                )}
+              </div>
             </div>
           )}
            {analysisType === 'document' && (

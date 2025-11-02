@@ -16,7 +16,7 @@ const typeConfig: { [key: string]: { legend: string; node: string } } = {
 
 
 const EntityGraph: React.FC<EntityGraphProps> = ({ graphData }) => {
-  const { nodes, edges } = graphData;
+  const { nodes = [], edges = [] } = graphData || {};
 
   const positions = useMemo(() => {
     const pos = new Map<string, { x: number; y: number }>();

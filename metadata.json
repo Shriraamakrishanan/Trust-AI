@@ -1,5 +1,7 @@
 {
   "name": "Trust AI",
   "description": "An AI-powered tool that analyzes text to detect potential misinformation and educates users on identifying credible, trustworthy content using Gemini.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }

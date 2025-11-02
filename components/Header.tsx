@@ -3,14 +3,19 @@ import React from 'react';
 import HistoryIcon from './icons/HistoryIcon';
 import SunIcon from './icons/SunIcon';
 import MoonIcon from './icons/MoonIcon';
+import EyeIcon from './icons/EyeIcon';
+import InformationCircleIcon from './icons/InformationCircleIcon';
 
 interface HeaderProps {
   onToggleHistory: () => void;
+  onToggleInfoDrawer: () => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  showTransparencyButton: boolean;
+  onToggleTransparency: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onToggleHistory, theme, onToggleTheme }) => {
+const Header: React.FC<HeaderProps> = ({ onToggleHistory, onToggleInfoDrawer, theme, onToggleTheme, showTransparencyButton, onToggleTransparency }) => {
   return (
     <header className="bg-[--surface] shadow-sm sticky top-0 z-20 border-b border-[--border]">
       <div className="container mx-auto px-4 md:px-8">
@@ -22,6 +27,24 @@ const Header: React.FC<HeaderProps> = ({ onToggleHistory, theme, onToggleTheme }
             </h1>
           </div>
           <div className="flex items-center space-x-2">
+            {showTransparencyButton && (
+                <button
+                    onClick={onToggleTransparency}
+                    className="w-10 h-10 flex items-center justify-center text-sm font-medium text-[--text-secondary] bg-[--surface] hover:bg-[--surface-muted] rounded-full transition-colors"
+                    aria-label="View Transparency Report"
+                    title="View Transparency Report"
+                >
+                    <EyeIcon className="w-5 h-5" />
+                </button>
+            )}
+             <button
+                onClick={onToggleInfoDrawer}
+                className="w-10 h-10 flex items-center justify-center text-sm font-medium text-[--text-secondary] bg-[--surface] hover:bg-[--surface-muted] rounded-full transition-colors"
+                aria-label="About this app"
+                title="About this app"
+            >
+                <InformationCircleIcon className="w-5 h-5" />
+            </button>
             <button
                 onClick={onToggleTheme}
                 className="w-10 h-10 flex items-center justify-center text-sm font-medium text-[--text-secondary] bg-[--surface] hover:bg-[--surface-muted] rounded-full transition-colors"
